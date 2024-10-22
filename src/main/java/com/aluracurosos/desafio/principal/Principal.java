@@ -1,5 +1,6 @@
 package com.aluracurosos.desafio.principal;
 
+import ch.qos.logback.core.encoder.JsonEscapeUtil;
 import com.aluracurosos.desafio.model.Datos;
 import com.aluracurosos.desafio.model.DatosAutor;
 import com.aluracurosos.desafio.model.DatosLibro;
@@ -42,6 +43,9 @@ public class Principal {
                     busquedaTitulo(texto);
                     break;
                 case 3:
+                    System.out.println("\nIngrese el autor que quiera buscar");
+                    texto = sc.nextLine();
+                    busquedaAutor(texto);
                     break;
                 case 4:
                     sw = false;
@@ -68,27 +72,62 @@ public class Principal {
 
     public void busquedaTitulo(String search) {
 //        System.out.println(search);
-        var json = consumoAPI.obtenerDatos(URL_BASE + "?search=" + search.toLowerCase().replace(" ", "%20"));
-        var datos = convierteDatos.obtenerDatos(json, Datos.class);
+        if (!search.isEmpty()) {
+            var json = consumoAPI.obtenerDatos(URL_BASE + "?search=" + search.toLowerCase().replace(" ", "%20"));
+            var datos = convierteDatos.obtenerDatos(json, Datos.class);
 
-        Optional<DatosLibro> libro = datos.libros().stream()
-                .sorted(Comparator.comparing(DatosLibro::descargas).reversed())
-                .findFirst();
-        if (libro.isPresent()) {
-            System.out.println("Libro Encontrado Exitosamente....");
-            System.out.println(" Titulo : " + libro.get().tiutlo() + "\n Autores :");
-            libro.get().autores().stream().collect(Collectors.toList()).forEach(a -> {
-                System.out.println("\t nombre: " + a.nombre());
-                System.out.println("\t nacimiento: " + a.fechaDeNacimiento());
-                System.out.println("\t fallecimiento: " + a.fechaDeFallecimiento());
-            });
-            System.out.println("Idiomas :");
-            for (String idioma : libro.get().idiomas()) {
-                System.out.println("\t - " + idioma);
+            Optional<DatosLibro> libro = datos.libros().stream()
+                    .sorted(Comparator.comparing(DatosLibro::descargas).reversed())
+                    .findFirst();
+            if (libro.isPresent()) {
+                System.out.println("Libro Encontrado Exitosamente....");
+                System.out.println(" Titulo : " + libro.get().tiutlo() + "\n Autores :");
+                libro.get().autores().stream().collect(Collectors.toList()).forEach(a -> {
+                    System.out.println("\t nombre: " + a.nombre());
+                    System.out.println("\t nacimiento: " + a.fechaDeNacimiento());
+                    System.out.println("\t fallecimiento: " + a.fechaDeFallecimiento());
+                });
+                System.out.println("Idiomas :");
+                for (String idioma : libro.get().idiomas()) {
+                    System.out.println("\t - " + idioma);
+                }
+                System.out.println("Total de descargas : " + libro.get().descargas());
+            } else {
+                System.out.println("Libro NO Encontrado....");
             }
-            System.out.println("Total de descargas : "+libro.get().descargas());
         } else {
-            System.out.println("Libor NO Encontrado....");
+            System.out.println("Introduzca al menos una palabra");
+        }
+    }
+
+    private void busquedaAutor(String search) {
+        if (!search.isEmpty()) {
+            var json = consumoAPI.obtenerDatos(URL_BASE + "?search=" + search.toLowerCase().replace(" ", "%20"));
+            var datos = convierteDatos.obtenerDatos(json, Datos.class);
+
+            List<DatosLibro> libro = datos.libros().stream()
+                    .sorted(Comparator.comparing(DatosLibro::descargas).reversed())
+                    .collect(Collectors.toList());
+
+//            libro.forEach(System.out::println);
+            if (!libro.isEmpty()) {
+                System.out.println("Autor Encontrado Exitosamente....");
+                Optional<DatosAutor> autor = libro.get(1).autores().stream().findFirst();
+                System.out.println(autor.get().nombre());
+                System.out.println(autor.get().fechaDeNacimiento());
+                System.out.println(autor.get().fechaDeFallecimiento());
+                System.out.println("*********************************************");
+                System.out.println("Libros escritos por el autor");
+                System.out.println("*********************************************");
+                libro.forEach(l -> {
+                    System.out.println("\t " + l.tiutlo());
+                });
+//                System.out.println(libro.size());
+            } else {
+                System.out.println("Autor NO Encontrado....");
+            }
+        } else {
+            System.out.println("Introduzca al menos una palabra");
         }
     }
 }
